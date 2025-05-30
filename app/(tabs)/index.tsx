@@ -1,75 +1,87 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+import Card from "@/components/Card";
+import { useEffect, useState } from "react";
+import { RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
-import { HelloWave } from '@/components/HelloWave';
-import ParallaxScrollView from '@/components/ParallaxScrollView';
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
+export default function FetchScreen() {
+    const [products, setProducts] = useState<[]>();
 
-export default function HomeScreen() {
-  return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
-  );
+    const fetchData = () => {
+        setProducts(undefined);
+
+        setTimeout(async () => {
+            console.log("Timeout finished, fetching data...");
+
+            try {
+                const response = await fetch("https://fakestoreapi.com/products");
+                const data = await response.json();
+
+                console.log("Fetched data:", data);
+
+                setProducts(data);
+            } catch (error) {}
+        }, 2000);
+    };
+
+    useEffect(() => {
+        fetchData();
+    }, []);
+
+    return (
+        <SafeAreaView style={styles.container}>
+            <Text style={styles.title}>Home</Text>
+
+            <ScrollView
+                style={{ paddingHorizontal: 16 }}
+                refreshControl={
+                    <RefreshControl onRefresh={() => fetchData()} refreshing={false} />
+                }
+            >
+                <View style={styles.cardsContainer}>
+                    {products ? (
+                        products.length ? (
+                            products.map((product, index) => (
+                                <Card key={index} product={product} />
+                            ))
+                        ) : (
+                            <Text style={styles.fetchMessages}>No products</Text>
+                        )
+                    ) : (
+                        <Text style={styles.fetchMessages}>Loading...</Text>
+                    )}
+                </View>
+            </ScrollView>
+        </SafeAreaView>
+    );
 }
 
-const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
-  },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
-  },
+export const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+    },
+
+    cardsContainer: {
+        flex: 1,
+        paddingBottom: 48,
+    },
+
+    title: {
+        fontSize: 32,
+        fontWeight: "bold",
+        marginBottom: 16,
+        paddingHorizontal: 16,
+    },
+
+    fetchMessages: {
+        fontSize: 16,
+        textAlign: "center",
+        marginTop: 16,
+        color: "#888",
+    },
+
+    button: {
+        padding: 8,
+        borderRadius: 8,
+        backgroundColor: "#007AFF",
+    },
 });
