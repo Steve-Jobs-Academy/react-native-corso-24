@@ -1,30 +1,28 @@
-import { useMemo } from "react";
-import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Product } from "@/types/products";
+import { useMemo, useState } from "react";
+import { Image, StyleSheet, Switch, Text, TouchableOpacity, View } from "react-native";
 
-type Product = {
-    id: number;
-    title: string;
-    price: number;
-    description: string;
-    category: string;
-    image: string;
-    rating: {
-        rate: number;
-        count: number;
-    };
-};
+const Card = ({ product, onPress }: { product: Product; onPress: () => void }) => {
+    if (!product) return null;
 
-const Card = ({ product }: { product: Product }) =>
-    useMemo(() => {
-        if (!product) return null;
+    const [switchState, setSwitchState] = useState<boolean>(false);
 
+    return useMemo(() => {
         return (
-            <TouchableOpacity style={styles.card}>
+            <TouchableOpacity style={styles.card} onPress={onPress}>
                 <View style={styles.row}>
                     <Image source={{ uri: product.image }} style={styles.image} />
                     <View style={styles.content}>
                         <Text style={styles.title}>{product.title}</Text>
                         <Text style={styles.description}>{product.description}</Text>
+
+                        <Switch
+                            trackColor={{ false: "#3e3e3e", true: "#007AFF" }}
+                            ios_backgroundColor="#3e3e3e"
+                            onValueChange={() => setSwitchState(!switchState)}
+                            value={switchState}
+                        />
+
                         <TouchableOpacity
                             style={styles.button}
                             onPress={() => console.log("Card pressed")}
@@ -35,7 +33,8 @@ const Card = ({ product }: { product: Product }) =>
                 </View>
             </TouchableOpacity>
         );
-    }, [product]);
+    }, [product, switchState]);
+};
 
 export default Card;
 
@@ -58,17 +57,16 @@ export const styles = StyleSheet.create({
         backgroundColor: "#fff",
     },
     content: {
+        gap: 8,
         flex: 1,
         justifyContent: "space-between",
     },
     title: {
         fontSize: 24,
         fontWeight: "bold",
-        marginBottom: 8,
     },
     description: {
         fontSize: 16,
-        marginBottom: 8,
     },
     button: {
         padding: 8,

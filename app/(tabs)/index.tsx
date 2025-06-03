@@ -1,24 +1,40 @@
 import Card from "@/components/Card";
+import { Product } from "@/types/products";
+import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
-import { RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
+import {
+    ActivityIndicator,
+    FlatList,
+    RefreshControl,
+    StyleSheet,
+    Switch,
+    Text,
+    TextInput,
+    View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function FetchScreen() {
-    const [products, setProducts] = useState<[]>();
+    const router = useRouter();
+
+    const [products, setProducts] = useState<Product[]>();
+    const [filteredProducts, setFilteredProducts] = useState<Product[]>();
+
+    const [searchDisabled, setSearchDisabled] = useState<boolean>(true);
 
     const fetchData = () => {
         setProducts(undefined);
+        setFilteredProducts(undefined);
 
         setTimeout(async () => {
-            console.log("Timeout finished, fetching data...");
-
             try {
                 const response = await fetch("https://fakestoreapi.com/products");
                 const data = await response.json();
 
-                console.log("Fetched data:", data);
-
-                setProducts(data);
+                if (data.length) {
+                    setProducts(data);
+                    setFilteredProducts(data);
+                }
             } catch (error) {}
         }, 2000);
     };
@@ -31,26 +47,60 @@ export default function FetchScreen() {
         <SafeAreaView style={styles.container}>
             <Text style={styles.title}>Home</Text>
 
-            <ScrollView
-                style={{ paddingHorizontal: 16 }}
-                refreshControl={
-                    <RefreshControl onRefresh={() => fetchData()} refreshing={false} />
-                }
-            >
-                <View style={styles.cardsContainer}>
-                    {products ? (
-                        products.length ? (
-                            products.map((product, index) => (
-                                <Card key={index} product={product} />
-                            ))
-                        ) : (
-                            <Text style={styles.fetchMessages}>No products</Text>
+            <View style={styles.searchContainer}>
+                <TextInput
+                    style={[
+                        styles.searchInput,
+                        searchDisabled && styles.searchInputDisabled,
+                    ]}
+                    placeholder="Cerca un prodotto..."
+                    editable={!searchDisabled}
+                    onChangeText={(text) =>
+                        setFilteredProducts(
+                            products?.filter(({ title }) =>
+                                title.toLowerCase().includes(text.toLowerCase())
+                            )
                         )
-                    ) : (
-                        <Text style={styles.fetchMessages}>Loading...</Text>
-                    )}
-                </View>
-            </ScrollView>
+                    }
+                />
+
+                <Switch
+                    value={!searchDisabled}
+                    onValueChange={(value) => setSearchDisabled(!value)}
+                />
+            </View>
+
+            {filteredProducts ? (
+                filteredProducts.length ? (
+                    <FlatList
+                        data={filteredProducts}
+                        style={styles.cardsContainer}
+                        renderItem={({ item }) => (
+                            <Card
+                                product={item}
+                                onPress={() =>
+                                    router.navigate(`/product/?id=${item.id.toString()}`)
+                                }
+                            />
+                        )}
+                        keyExtractor={(item) => item.id.toString()}
+                        refreshControl={
+                            <RefreshControl
+                                onRefresh={() => fetchData()}
+                                refreshing={false}
+                            />
+                        }
+                    />
+                ) : (
+                    <Text style={styles.fetchMessages}>
+                        {!products?.length
+                            ? "No products"
+                            : "No results found from search"}
+                    </Text>
+                )
+            ) : (
+                <ActivityIndicator />
+            )}
         </SafeAreaView>
     );
 }
@@ -58,18 +108,38 @@ export default function FetchScreen() {
 export const styles = StyleSheet.create({
     container: {
         flex: 1,
+        gap: 16,
     },
 
     cardsContainer: {
-        flex: 1,
+        paddingHorizontal: 16,
         paddingBottom: 48,
     },
 
     title: {
         fontSize: 32,
         fontWeight: "bold",
-        marginBottom: 16,
         paddingHorizontal: 16,
+    },
+
+    searchContainer: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 16,
+        marginHorizontal: 16,
+    },
+
+    searchInput: {
+        flex: 1,
+        padding: 16,
+        borderWidth: 1,
+        borderColor: "#ccc",
+        borderRadius: 8,
+    },
+
+    searchInputDisabled: {
+        backgroundColor: "#dddddd",
+        color: "#888",
     },
 
     fetchMessages: {
